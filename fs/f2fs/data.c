@@ -3,6 +3,7 @@
  * fs/f2fs/data.c
  *
  * Copyright (c) 2012 Samsung Electronics Co., Ltd.
+ * Copyright (C) 2021 XiaoMi, Inc.
  *             http://www.samsung.com/
  */
 #include <linux/fs.h>
@@ -951,6 +952,10 @@ int f2fs_merge_page_bio(struct f2fs_io_info *fio)
 	trace_f2fs_submit_page_bio(page, fio);
 	f2fs_trace_ios(fio, 0);
 
+	if (bio && !page_is_mergeable(fio->sbi, bio, *fio->last_block,
+				       fio->new_blkaddr))
+		f2fs_submit_merged_ipu_write(fio->sbi, &bio, NULL);
+
 alloc_new:
 	if (!bio) {
 		bio = __bio_alloc(fio, BIO_MAX_PAGES);
@@ -959,6 +964,7 @@ alloc_new:
 				       GFP_NOIO);
 		__attach_io_flag(fio);
 		bio_set_op_attrs(bio, fio->op, fio->op_flags);
+
 		add_bio_entry(fio->sbi, bio, page, fio->temp);
 	} else {
 		if (add_ipu_page(fio, &bio, page))
