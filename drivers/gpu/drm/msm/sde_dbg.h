@@ -179,14 +179,19 @@ extern struct sde_dbg_evtlog *sde_dbg_base_evtlog;
  * sde_evtlog_init - allocate a new event log object
  * Returns:	evtlog or -ERROR
  */
-struct sde_dbg_evtlog *sde_evtlog_init(void);
+static inline struct sde_dbg_evtlog *sde_evtlog_init(void)
+{
+	return NULL;
+}
 
 /**
  * sde_evtlog_destroy - destroy previously allocated event log
  * @evtlog:	pointer to evtlog
  * Returns:	none
  */
-void sde_evtlog_destroy(struct sde_dbg_evtlog *evtlog);
+static inline void sde_evtlog_destroy(struct sde_dbg_evtlog *evtlog)
+{
+}
 
 /**
  * sde_evtlog_log - log an entry into the event log.
@@ -198,15 +203,19 @@ void sde_evtlog_destroy(struct sde_dbg_evtlog *evtlog);
  * @flag:	log area filter flag checked against user's debugfs request
  * Returns:	none
  */
-void sde_evtlog_log(struct sde_dbg_evtlog *evtlog, const char *name, int line,
-		int flag, ...);
+static inline void sde_evtlog_log(struct sde_dbg_evtlog *evtlog,
+        const char *name, int line, int flag, ...)
+{
+}
 
 /**
  * sde_evtlog_dump_all - print all entries in event log to kernel log
  * @evtlog:	pointer to evtlog
  * Returns:	none
  */
-void sde_evtlog_dump_all(struct sde_dbg_evtlog *evtlog);
+static inline void sde_evtlog_dump_all(struct sde_dbg_evtlog *evtlog)
+{
+}
 
 /**
  * sde_evtlog_is_enabled - check whether log collection is enabled for given
@@ -215,7 +224,11 @@ void sde_evtlog_dump_all(struct sde_dbg_evtlog *evtlog);
  * @flag:	log area filter flag
  * Returns:	none
  */
-bool sde_evtlog_is_enabled(struct sde_dbg_evtlog *evtlog, u32 flag);
+static inline bool sde_evtlog_is_enabled(struct sde_dbg_evtlog *evtlog,
+        u32 flag)
+{
+    return false;
+}
 
 /**
  * sde_evtlog_dump_to_buffer - print content of event log to the given buffer
