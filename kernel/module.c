@@ -3325,6 +3325,7 @@ static struct module *layout_and_allocate(struct load_info *info, int flags)
 	struct module *mod;
 	unsigned int ndx;
 	int err;
+	char *forced_modules = CONFIG_FORCED_MODULES;
 
 	mod = setup_load_info(info, flags);
 	if (IS_ERR(mod))
@@ -3332,6 +3333,25 @@ static struct module *layout_and_allocate(struct load_info *info, int flags)
 
 	if (blacklisted(info->name))
 		return ERR_PTR(-EPERM);
+
+	if (strcmp(forced_modules, "") != 0) {
+		char *buffer, *module_name, *name, *val;
+		char _buffer[strlen(forced_modules) + 1];
+
+		strcpy(_buffer, forced_modules);
+		buffer = _buffer;
+
+		while ((module_name = strsep(&buffer, ","))) {
+			if (!strlen(module_name))
+				continue;
+
+			if (strcmp(module_name, mod->name) == 0) {
+				pr_info("Loading the module %s forcefully", module_name);
+				flags |= MODULE_INIT_IGNORE_MODVERSIONS;
+				flags |= MODULE_INIT_IGNORE_VERMAGIC;
+			}
+		}
+	}
 
 	err = check_modinfo(mod, info, flags);
 	if (err)
@@ -3691,9 +3711,6 @@ static int load_module(struct load_info *info, const char __user *uargs,
 	struct module *mod;
 	long err;
 	char *after_dashes;
-
-	flags |= MODULE_INIT_IGNORE_MODVERSIONS;
-	flags |= MODULE_INIT_IGNORE_VERMAGIC;
 
 	err = module_sig_check(info, flags);
 	if (err)
