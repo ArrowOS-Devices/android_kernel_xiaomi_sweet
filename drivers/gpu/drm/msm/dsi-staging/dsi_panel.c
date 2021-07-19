@@ -583,6 +583,8 @@ static int dsi_panel_tx_cmd_set(struct dsi_panel *panel,
 	count = mode->priv_info->cmd_sets[type].count;
 	state = mode->priv_info->cmd_sets[type].state;
 
+	panel->applied_cmds[(uint32_t) type] = 1;
+
 	if (count == 0) {
 		pr_debug("[%s] No commands to be sent for state(%d)\n",
 			 panel->name, type);
@@ -6191,16 +6193,16 @@ int dsi_panel_post_switch(struct dsi_panel *panel)
 int dsi_panel_enable(struct dsi_panel *panel)
 {
 	int rc = 0;
-	u32 count = 0;
 
 	if (!panel) {
 		pr_err("Invalid params\n");
 		return -EINVAL;
 	}
 
-	count = panel->cur_mode->priv_info->cmd_sets[DSI_CMD_SET_DISP_BC_120HZ].count;
-
 	mutex_lock(&panel->panel_lock);
+
+	for (int i = 0; i < sizeof(panel->applied_cmds); i++)
+		panel->applied_cmds[i] = 0;
 
 	rc = dsi_panel_tx_cmd_set(panel, DSI_CMD_SET_ON);
 	if (rc)
@@ -6208,13 +6210,6 @@ int dsi_panel_enable(struct dsi_panel *panel)
 		       panel->name, rc);
 	else
 		panel->panel_initialized = true;
-
-	if (count && (panel->cur_mode->timing.refresh_rate == 120)) {
-		rc = dsi_panel_tx_cmd_set(panel, DSI_CMD_SET_DISP_BC_120HZ);
-		if (rc)
-			pr_err("[%s] failed to send DSI_CMD_SET_DISP_BC_120HZ cmd, rc=%d\n",
-					panel->name, rc);
-	}
 
 	if (panel->bl_config.xiaomi_f4_41_flag && panel->dc_enable && panel->dc_demura_threshold) {
 		rc = dsi_panel_tx_cmd_set(panel, DSI_CMD_SET_DISP_DC_ON);
@@ -6701,3 +6696,19 @@ ssize_t dsi_panel_mipi_reg_read(struct dsi_panel *panel, char *buf)
 	return count;
 }
 
+int dsi_panel_apply_gamma_correction(struct dsi_panel *panel) {
+    int rc = 0;
+	u32 count = panel->cur_mode->priv_info->cmd_sets[DSI_CMD_SET_DISP_BC_120HZ].count;
+
+	if (panel->panel_initialized && panel->applied_cmds[(uint32_t) DSI_CMD_SET_POST_ON]) {
+		if (count && (panel->cur_mode->timing.refresh_rate == 120)
+			&& !panel->applied_cmds[(uint32_t) DSI_CMD_SET_DISP_BC_120HZ]) {
+			rc = dsi_panel_tx_cmd_set(panel, DSI_CMD_SET_DISP_BC_120HZ);
+			if (rc)
+				pr_err("[%s] failed to send DSI_CMD_SET_DISP_BC_120HZ cmd, rc=%d\n",
+						panel->name, rc);
+		}
+	}
+
+    return rc;
+}
