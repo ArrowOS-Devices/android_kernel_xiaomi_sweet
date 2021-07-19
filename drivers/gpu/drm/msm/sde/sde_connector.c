@@ -951,6 +951,7 @@ end:
 
 int sde_connector_prepare_commit(struct drm_connector *connector)
 {
+	struct dsi_panel *panel;
 	struct sde_connector *c_conn;
 	struct sde_connector_state *c_state;
 	struct msm_display_conn_params params;
@@ -982,6 +983,14 @@ int sde_connector_prepare_commit(struct drm_connector *connector)
 
 	SDE_EVT32(connector->base.id, params.qsync_mode,
 		  params.qsync_update, rc);
+
+	panel = ((struct dsi_display *) c_conn->display)->panel;
+
+	if (panel) {
+		mutex_lock(&panel->panel_lock);
+		dsi_panel_apply_gamma_correction(panel);
+		mutex_unlock(&panel->panel_lock);
+	}
 
 	return rc;
 }
